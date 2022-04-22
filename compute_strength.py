@@ -13,7 +13,9 @@ def film_strength(MUR, MUG, MUA, MUD, user_id, film_id, films, ratings, similari
     simsSorted = sorted(similarities_for_user, key=operator.itemgetter(1), reverse=True)
     sims = simsSorted[:nSimUsers]
     film = films[film_id]
-
+    user_director_predict = dict()
+    user_actor_predict = dict()
+    user_genre_predict = dict()
     # take an average of each of the the genre's average ratings
     nGenres = 0
     dGenres = 0
@@ -31,8 +33,8 @@ def film_strength(MUR, MUG, MUA, MUD, user_id, film_id, films, ratings, similari
 
         for genrefilm in movie_ids_with_aspect_value:
             if (genrefilm, user_id) in ratings.keys():
-                dGenre += ((ratings[(
-                    genrefilm, user_id)] - 1) / 2) - 1  # adds this to the current user's ratings total for this genre
+                # adds this to the current user's ratings total for this genre
+                dGenre += ((ratings[(genrefilm, user_id)] - 1) / 2) - 1
                 nGenre += 1  # and the count
             else:
                 avg_rat = average_rating(sims, genrefilm, ratings)
@@ -51,7 +53,7 @@ def film_strength(MUR, MUG, MUA, MUD, user_id, film_id, films, ratings, similari
                 avGenre = dGenreSim / nGenreSim  # uses only the similar users' ratings
             else:
                 avGenre = 0
-
+        user_genre_predict[genre] = avGenre
         dGenres += avGenre
         nGenres += 1
 
@@ -97,7 +99,7 @@ def film_strength(MUR, MUG, MUA, MUD, user_id, film_id, films, ratings, similari
                 avActor = dActorSim / nActorSim  # uses only the similar users' ratings
             else:
                 avActor = 0
-
+        user_actor_predict[actor] = avActor
         dActors += avActor
         nActors += 1
 
@@ -144,7 +146,7 @@ def film_strength(MUR, MUG, MUA, MUD, user_id, film_id, films, ratings, similari
                 avDirector = dDirectorSim / nDirectorSim  # uses only the similar users' ratings
             else:
                 avDirector = 0
-
+        user_director_predict[director] = avDirector
         dDirectors += avDirector
         nDirectors += 1
 
@@ -157,25 +159,21 @@ def film_strength(MUR, MUG, MUA, MUD, user_id, film_id, films, ratings, similari
     item_strength = ((MUG * avgGenreRating) + (MUA * avgActorRating) + (MUD * avgDirectorRating)) / (MUG + MUA + MUD)
     film_strength = (((item_strength + 1) * 2) + 1)
 
-    # TODO add rateing on aspects
-    return film_strength
+    return film_strength, user_genre_predict, user_actor_predict, user_director_predict
 
 
 def average_rating(sims, film_id, ratings):
     # counts and totals for each type of aspect
     nRatings = 0
     dRatings = 0
-
     for sim in sims:
         user_id = sim[0]
         similarity = sim[1]
-
         if (film_id, user_id) in ratings.keys():
             user_rating = ratings[(film_id, user_id)]
             scaled_rating = ((user_rating - 1) / 2) - 1
             dRatings += scaled_rating * similarity
             nRatings += 1
-
     if nRatings == 0:
         return None
     return dRatings / nRatings

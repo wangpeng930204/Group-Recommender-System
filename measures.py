@@ -30,41 +30,51 @@ def group_predictions(MUR, MUG, MUA, MUD, films, compressed_test_ratings_dict, r
 def predictions(MUR, MUG, MUA, MUD, films, compressed_test_ratings_dict, ratings_dict, sims, movies_all_genres_matrix,
                 movies_all_directors_matrix, movies_all_actors_matrix, data_origin):
     # compute strengths
-    predictions = []
+    all_pres = dict()
     for user_id, true_ratings in compressed_test_ratings_dict.items():
+        individual_pre, genre_predict_all, actor_predict_all, director_predict_all = dict(), dict(), dict(), dict()
+
         if true_ratings:
             for (film_id, str_rating) in true_ratings:
-                strength = film_strength(MUR, MUG, MUA, MUD, user_id, film_id, films, ratings_dict, sims[user_id],
-                                         movies_all_genres_matrix, movies_all_directors_matrix,
-                                         movies_all_actors_matrix)
-                if data_origin == 'netflix':
-                    predictions.append((int(str_rating), strength))
-                elif data_origin == 'small':
-                    predictions.append((float(str_rating), strength))
-                elif data_origin == '100k':
-                    predictions.append((int(str_rating), strength))
-
-    if data_origin == 'netflix':
-        true_ratings = [x for (x, y) in predictions]
-        predicted_ratings = [round(y) for (x, y) in predictions]
-        p, r, f = binary_predictions(true_ratings, predicted_ratings)
-        return len(predictions), arg_accuracy_int(predictions), sqrt(
-            mean_squared_error(true_ratings, predicted_ratings)), mean_absolute_error(true_ratings,
-                                                                                      predicted_ratings), p, r, f
-    elif data_origin == 'small':
-        true_ratings = [x for (x, y) in predictions]
-        predicted_ratings = [round_of_rating(y) for (x, y) in predictions]
-        p, r, f = binary_predictions(true_ratings, predicted_ratings)
-        return len(predictions), arg_accuracy_float(predictions), sqrt(
-            mean_squared_error(true_ratings, predicted_ratings)), mean_absolute_error(true_ratings,
-                                                                                      predicted_ratings), p, r, f
-    elif data_origin == '100k':
-        true_ratings = [x for (x, y) in predictions]
-        predicted_ratings = [round(y) for (x, y) in predictions]
-        p, r, f = binary_predictions(true_ratings, predicted_ratings)
-        return len(predictions), arg_accuracy_int(predictions), sqrt(
-            mean_squared_error(true_ratings, predicted_ratings)), mean_absolute_error(true_ratings,
-                                                                                      predicted_ratings), p, r, f
+                filmRating, genreRating, actorRating, directorRating = film_strength(MUR, MUG, MUA, MUD, user_id,
+                                                                                     film_id, films, ratings_dict,
+                                                                                     sims[user_id],
+                                                                                     movies_all_genres_matrix,
+                                                                                     movies_all_directors_matrix,
+                                                                                     movies_all_actors_matrix)
+                genre_predict_all.update(genreRating)
+                actor_predict_all.update(actorRating)
+                director_predict_all.update(directorRating)
+                individual_pre[str(film_id)] = filmRating
+                # if data_origin == 'netflix':
+                #     predictions.append((int(str_rating), filmRating))
+                # elif data_origin == 'small':
+                #     predictions.append((float(str_rating), filmRating))
+                # elif data_origin == '100k':
+                #     predictions.append((int(str_rating), filmRating))
+        all_pres[user_id] = (individual_pre, genre_predict_all, actor_predict_all, director_predict_all)
+    # if data_origin == 'netflix':
+    #     true_ratings = [x for (x, y) in predictions]
+    #     predicted_ratings = [round(y) for (x, y) in predictions]
+    #     p, r, f = binary_predictions(true_ratings, predicted_ratings)
+    #     return len(predictions), arg_accuracy_int(predictions), sqrt(
+    #         mean_squared_error(true_ratings, predicted_ratings)), mean_absolute_error(true_ratings,
+    #                                                                                   predicted_ratings), p, r, f
+    # elif data_origin == 'small':
+    #     true_ratings = [x for (x, y) in predictions]
+    #     predicted_ratings = [round_of_rating(y) for (x, y) in predictions]
+    #     p, r, f = binary_predictions(true_ratings, predicted_ratings)
+    #     return len(predictions), arg_accuracy_float(predictions), sqrt(
+    #         mean_squared_error(true_ratings, predicted_ratings)), mean_absolute_error(true_ratings,
+    #                                                                                   predicted_ratings), p, r, f
+    # elif data_origin == '100k':
+    #     true_ratings = [x for (x, y) in predictions]
+    #     predicted_ratings = [round(y) for (x, y) in predictions]
+    #     p, r, f = binary_predictions(true_ratings, predicted_ratings)
+    #     return predictions, arg_accuracy_int(predictions), sqrt(
+    #         mean_squared_error(true_ratings, predicted_ratings)), mean_absolute_error(true_ratings,
+    #                                                                                   predicted_ratings), p, r, f
+    return all_pres
 
 
 def binary_predictions(true_ratings, predicted_ratings):
@@ -94,7 +104,7 @@ def arg_accuracy_int(true_and_predicted_ratings):
     total_pred = 0
     for i in range(total_nr):
         (true_rating, pred_rating) = true_and_predicted_ratings[i]
-        if round(pred_rating) >= int(true_rating) - 1 and round(pred_rating) <= int(true_rating) + 1:
+        if int(true_rating) - 1 <= round(pred_rating) <= int(true_rating) + 1:
             total_pred += 1
 
     return float(total_pred) / total_nr
@@ -105,7 +115,7 @@ def arg_accuracy_float(true_and_predicted_ratings):
     total_pred = 0
     for i in range(total_nr):
         (true_rating, pred_rating) = true_and_predicted_ratings[i]
-        if round_of_rating(pred_rating) >= float(true_rating) - 1 and round_of_rating(pred_rating) <= float(
+        if float(true_rating) - 1 <= round_of_rating(pred_rating) <= float(
                 true_rating) + 1:
             total_pred += 1
 
