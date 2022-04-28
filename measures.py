@@ -1,30 +1,9 @@
 ''' compute different measures to determine performance '''
 
-import jsonlines
-from math import sqrt
 from compute_strength import film_strength
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
-
-
-# Todo: find the group strategy for GRs
-def group_strategy():
-    print("Todo: find the group strategy for GRs")
-
-
-# Todo: find the group prediction for GRs
-def group_predictions(MUR, MUG, MUA, MUD, films, compressed_test_ratings_dict, ratings_dict, sims,
-                      movies_all_genres_matrix,
-                      movies_all_directors_matrix, movies_all_actors_matrix, data_origin, groups):
-    group_pds = []
-    for group in groups:
-        for user in group:
-            group_strategy()
-
-    return group_pds
 
 
 def predictions(MUR, MUG, MUA, MUD, films, compressed_test_ratings_dict, ratings_dict, sims, movies_all_genres_matrix,

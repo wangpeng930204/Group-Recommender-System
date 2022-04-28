@@ -1,9 +1,9 @@
 import pickle
 import time
 
-from group import generate_group, aggregate_group_rating
+from group import generate_group, group_recommendation
 from measures import predictions
-from processing import preprocessing, remove_missing_film, get_user_rating_dicts, get_movies_aspect_matrix, \
+from processing import remove_missing_film, get_user_rating_dicts, get_movies_aspect_matrix, \
     compute_similarity
 
 MUR = 0.1
@@ -34,5 +34,9 @@ if __name__ == "__main__":
                               movies_all_actors_matrix, movielens_data)
     # generate group
     groups = generate_group(predictions.keys())
-    # aggregate group ratings
-    group_prediction = aggregate_group_rating(predictions, groups)
+
+    group_rec_threshold, group_exp_threshold = group_recommendation(predictions, groups, "threshold", 2.5)
+
+    group_rec_frequency, group_exp_frequency = group_recommendation(predictions, groups, "frequency", 2.5)
+
+    group_recommendation_average, group_explanation_average = group_recommendation(predictions, groups, "average", 2)
