@@ -4,26 +4,27 @@ import operator
 import numpy as np
 
 
-def generate_group(user_ids, random=True):
+def generate_group(user_ids, group_scale = 10, random=True):
     groups = []
     if random:
-        groups = randomly_form_group(user_ids)
+        groups = randomly_form_group(user_ids, group_scale)
         # train_ratings_dict['group'] = groups
     return groups
 
 
-def randomly_form_group(user_ids):
-    user_ids = list(user_ids)
-    group_scale = 10
-    group_numbers = int(len(user_ids) / 10)
+def randomly_form_group(user_ids, group_scale):
+    user_ids_ = list(user_ids).copy()
+    group_numbers = int(len(user_ids) / group_scale)
     groups = dict()
     for gn in range(group_numbers):
         one_group = []
-        for mn in range(np.random.randint(1, group_scale)):
-            index = np.random.randint(1, len(user_ids))
-            one_group.append(user_ids[index])
+        for mn in range(group_scale):
+            index = np.random.randint(1, len(user_ids_))
+            one_group.append(user_ids_[index])
+            user_ids_.pop(index)
         group_id = "g" + str(gn)
         groups[group_id] = one_group
+    groups["g"+str(gn+1)] = user_ids_
     return groups
 
 
@@ -56,9 +57,9 @@ def sum_rating(base, to_sum):
 
 def group_recommendation(user_predictions, groups, strategy, threshold):
     if strategy == "frequency":
-        g_recommendation, g_explanation = frequency_strategy(user_predictions, groups, threshold)
+        g_rating, g_recommendation, g_explanation = frequency_strategy(user_predictions, groups, threshold)
     else:
-        g_recommendation, g_explanation = dict(), dict()
+        g_rating, g_recommendation, g_explanation = dict(), dict(), dict()
         group_predictions, group_members_predictions = aggregate_group_rating(user_predictions, groups)
         for g_id in group_predictions.keys():
             num_member = len(groups[g_id])
@@ -81,38 +82,53 @@ def group_recommendation(user_predictions, groups, strategy, threshold):
             director_rating = dict(sorted(director_rating.items(), key=lambda item: item[1]))
             if strategy == "average":
                 sorted_film = list(film_rating.keys())
-                if len(sorted_film) > 3:
-                    g_recommendation[g_id] = sorted_film[:3]
-                else:
-                    g_recommendation[g_id] = sorted_film
+                sorted_rating = list(film_rating.values())
+                # if len(sorted_film) > 3:
+                #     g_recommendation[g_id] = sorted_film[:3]
+                # else:
+                g_recommendation[g_id] = sorted_film
+                g_rating[g_id] = sorted_rating
             elif strategy == "threshold":
-                recommendation, dislike = strategy_threshold(film_rating, group_members_predictions[g_id], threshold)
+                member_rating_filter, recommendation, dislike = strategy_threshold(film_rating, group_members_predictions[g_id], threshold)
                 g_recommendation[g_id] = recommendation
                 g_explanation[g_id] = dislike
-    return g_recommendation, g_explanation
+                g_rating.update(member_rating_filter)
+    return g_rating, g_recommendation, g_explanation
 
 
 def strategy_threshold(group_pre, group_member_pre, threshold):
-    group_dislike = set()
-    members_dislike = dict()
     recommendation = []
+    members_like = dict()
+    member_rating_filter = dict()
     for u_id in group_member_pre.keys():
-        dislike = set()
+        like = []
+        rating_filter_list = []
         (film_rating, actor_rating, genre_rating, director_rating) = group_member_pre[u_id]
         for film in film_rating.keys():
-            if film_rating[film] < threshold:
-                dislike.update(film)
-                group_dislike.update(film)
-        members_dislike[u_id] = dislike
-    for film in group_pre.keys():
-        if film not in group_dislike:
-            recommendation.append(film)
-    return recommendation, members_dislike
+            if film_rating[film] >= threshold:
+                like.append(film)
+                # group_like.update(film)
+        
+        members_like[u_id] = like
+    # for film in group_pre.keys():
+    #     if film in group_like:
+    #         recommendation.append(film)
+    for v in members_like.values():
+      recommendation.append(v)
+    recommendation_ = list(set.intersection(*[set(x) for x in recommendation]))
+    for u_id in group_member_pre.keys():
+      rating_filter_list = []  
+      (film_rating, actor_rating, genre_rating, director_rating) = group_member_pre[u_id]
+      for film in recommendation_:
+        rating_filter_list.append(film_rating[film])
+      member_rating_filter[u_id] = rating_filter_list
+    return member_rating_filter, recommendation_, members_like
 
 
 def frequency_strategy(user_predictions, groups, threshold):
     recommendation = dict()
     group_explanation = dict()
+    group_frequency = dict()
     for g_id in groups.keys():
         loved_film_frequency = dict()
         user_explanation = dict()
@@ -130,9 +146,10 @@ def frequency_strategy(user_predictions, groups, threshold):
                     loved_film_frequency[film] = 1
         loved_film_frequency = dict(sorted(loved_film_frequency.items(), key=lambda item: item[1]))
         recommendation[g_id] = list(loved_film_frequency.keys())
+        group_frequency[g_id] = list(loved_film_frequency.values())
         group_explanation[g_id] = user_explanation
 
-    return recommendation, group_explanation
+    return group_frequency, recommendation, group_explanation
 
 
 def rating_filter(ratings, threshold):
