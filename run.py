@@ -1,9 +1,8 @@
 import pickle
 import time
 
-from group import generate_group, group_recommendation
+from group import generate_group, group_recommendation, aggregate_group_rating
 from measures import predictions
-from metrics import ndcg_group
 from processing import remove_missing_film, get_user_rating_dicts, get_movies_aspect_matrix, \
     compute_similarity
 
@@ -28,20 +27,16 @@ if __name__ == "__main__":
     # compute user similarity
     ratings_dict, sims = compute_similarity(train_ratings_dict, films)
     # user prediction
-    predictions = predictions(MUR, MUG, MUA, MUD, films,
-                              compressed_test_ratings_dict, ratings_dict,
-                              sims, movies_all_genres_matrix,
-                              movies_all_directors_matrix,
-                              movies_all_actors_matrix, movielens_data)
+    user_predictions = predictions(MUR, MUG, MUA, MUD, films,
+                                   compressed_test_ratings_dict, ratings_dict,
+                                   sims, movies_all_genres_matrix,
+                                   movies_all_directors_matrix,
+                                   movies_all_actors_matrix, movielens_data)
     # generate group
-    groups = generate_group(predictions.keys(), group_scale = 10)
+    groups = generate_group(user_predictions.keys())
+    group_prediction = aggregate_group_rating(films, user_predictions, groups, MUG, MUA, MUD)
+    g_rating_t, g_recommendation_t, g_explanation_t = group_recommendation(user_predictions, groups, "threshold", 2.5,
+                                                                           films, MUG, MUA, MUD)
 
-    group_pred_rating_thr, group_rec_threshold, group_exp_threshold = group_recommendation(predictions, groups, "threshold", 2.5)
-
-    group_pred_rating_frq, group_rec_frequency, group_exp_frequency = group_recommendation(predictions, groups, "frequency", 2.5)
-
-    group_pred_rating_avg, group_rec_average, group_exp_average = group_recommendation(predictions, groups, "average", 2)
-
-    print("nDCG for threshold strategy:", ndcg_group(compressed_test_ratings_dict, groups, group_pred_rating_thr, group_rec_threshold, strategy="threshold"))
-    print("nDCG for frequency strategy:", ndcg_group(compressed_test_ratings_dict, groups, group_pred_rating_frq, group_rec_frequency, strategy="frequency"))
-    print("nDCG for average strategy:", ndcg_group(compressed_test_ratings_dict, groups, group_pred_rating_avg, group_rec_average, strategy="average"))
+    g_rating_a, g_recommendation_a, g_explanation_a = group_recommendation(user_predictions, groups, "average",
+                                                                           2, films, MUG, MUA, MUD)

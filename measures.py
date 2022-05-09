@@ -21,38 +21,11 @@ def predictions(MUR, MUG, MUA, MUD, films, compressed_test_ratings_dict, ratings
                                                                                      movies_all_genres_matrix,
                                                                                      movies_all_directors_matrix,
                                                                                      movies_all_actors_matrix)
-                genre_predict_all.update(genreRating)
-                actor_predict_all.update(actorRating)
-                director_predict_all.update(directorRating)
+                genre_predict_all[str(film_id)] = genreRating
+                actor_predict_all[str(film_id)] = actorRating
+                director_predict_all[str(film_id)] = directorRating
                 individual_pre[str(film_id)] = filmRating
-                # if data_origin == 'netflix':
-                #     predictions.append((int(str_rating), filmRating))
-                # elif data_origin == 'small':
-                #     predictions.append((float(str_rating), filmRating))
-                # elif data_origin == '100k':
-                #     predictions.append((int(str_rating), filmRating))
         all_pres[user_id] = (individual_pre, genre_predict_all, actor_predict_all, director_predict_all)
-    # if data_origin == 'netflix':
-    #     true_ratings = [x for (x, y) in predictions]
-    #     predicted_ratings = [round(y) for (x, y) in predictions]
-    #     p, r, f = binary_predictions(true_ratings, predicted_ratings)
-    #     return len(predictions), arg_accuracy_int(predictions), sqrt(
-    #         mean_squared_error(true_ratings, predicted_ratings)), mean_absolute_error(true_ratings,
-    #                                                                                   predicted_ratings), p, r, f
-    # elif data_origin == 'small':
-    #     true_ratings = [x for (x, y) in predictions]
-    #     predicted_ratings = [round_of_rating(y) for (x, y) in predictions]
-    #     p, r, f = binary_predictions(true_ratings, predicted_ratings)
-    #     return len(predictions), arg_accuracy_float(predictions), sqrt(
-    #         mean_squared_error(true_ratings, predicted_ratings)), mean_absolute_error(true_ratings,
-    #                                                                                   predicted_ratings), p, r, f
-    # elif data_origin == '100k':
-    #     true_ratings = [x for (x, y) in predictions]
-    #     predicted_ratings = [round(y) for (x, y) in predictions]
-    #     p, r, f = binary_predictions(true_ratings, predicted_ratings)
-    #     return predictions, arg_accuracy_int(predictions), sqrt(
-    #         mean_squared_error(true_ratings, predicted_ratings)), mean_absolute_error(true_ratings,
-    #                                                                                   predicted_ratings), p, r, f
     return all_pres
 
 

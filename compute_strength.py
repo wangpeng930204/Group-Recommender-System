@@ -126,8 +126,7 @@ def film_strength(MUR, MUG, MUA, MUD, user_id, film_id, films, ratings, similari
         for directorfilm in movie_ids_with_aspect_value:
             if (directorfilm, user_id) in ratings.keys():
                 dDirector += ((ratings[(
-                    directorfilm,
-                    user_id)] - 1) / 2) - 1  # adds this to the current user's ratings total for this director
+                directorfilm, user_id)] - 1) / 2) - 1  # adds this to the current user's ratings total for this director
                 nDirector += 1  # and the count
             else:
                 avg_rat = average_rating(sims, directorfilm, ratings)
