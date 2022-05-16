@@ -34,6 +34,21 @@ def dcg(ratings, order):
 
     return dcg
 
+def ndcg_individual(compressed_test_ratings_dict, user_pred):
+  nDCG = []
+  for user_id, true_ratings in compressed_test_ratings_dict.items():
+    true_r = []
+    mid = []
+    if true_ratings:
+        for (film_id, str_rating) in true_ratings:
+          true_r.append(int(str_rating))
+          mid.append(film_id)
+
+        pred_rating = [user_pred[str(user_id)][0][str(i)] for i in mid]
+        ndcg = _calculate_ndcg(np.array(true_r), np.array(pred_rating))
+        nDCG.append(ndcg)
+  mean_nDCG = sum(nDCG)/len(nDCG)
+  return mean_nDCG
 
 def ndcg_group(compressed_test_ratings_dict, groups,
                group_pred_rating, group_recommendation, strategy):
@@ -53,5 +68,5 @@ def ndcg_group(compressed_test_ratings_dict, groups,
                 pred_rating_filter = [group_pred_rating[group[0]][pred_mid.index(i)] for i in mid if i in pred_mid]
             ndcg = _calculate_ndcg(np.array(true_r), np.array(pred_rating_filter))
             nDCG.append(ndcg)
-    nDCG_avg = sum(nDCG) / len(nDCG)
-    return nDCG_avg
+    mean_nDCG = sum(nDCG) / len(nDCG)
+    return mean_nDCG
