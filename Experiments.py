@@ -5,7 +5,7 @@ import numpy as np
 
 from group import generate_group, group_recommendation, aggregate_group_rating
 from measures import predictions
-from metrics import ndcg_group, _calculate_ndcg
+from metrics import ndcg_group, ndcg_individual
 from processing import remove_missing_film, get_user_rating_dicts, get_movies_aspect_matrix, \
     compute_similarity
 from matplotlib import pyplot as plt
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     evaluations_average = []
     evaluation_threshold = []
     ax_value = []
-    user_evaluation = _calculate_ndcg(compressed_test_ratings_dict, user_predictions) ##give individual ndcg here
+    user_evaluation = ndcg_individual(compressed_test_ratings_dict, user_predictions) ##give individual ndcg here
     user_evaluations = []
     for group_scale in range(2, 10):
         user_evaluations.append(user_evaluation)
