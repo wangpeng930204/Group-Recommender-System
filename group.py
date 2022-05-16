@@ -4,7 +4,7 @@ import operator
 import numpy as np
 
 
-def generate_group(user_ids, group_scale=3, random=True):
+def generate_group(user_ids, group_scale=6, random=True):
     groups = []
     if random:
         groups = randomly_form_group(user_ids, group_scale)
@@ -114,10 +114,8 @@ def group_film_strength(films, avgGenreRating, avgActorRating, avgDirectorRating
     return group_pre
 
 
-def group_recommendation(user_predictions, groups, strategy, threshold, films, MUG, MUA, MUD):
+def group_recommendation(group_predictions, member_predictions, groups, strategy, threshold, films, MUG, MUA, MUD):
     g_rating, g_recommendation, g_explanation = dict(), dict(), dict()
-    group_predictions, member_predictions = aggregate_group_rating(films, user_predictions, groups, MUG, MUA, MUD)
-
     for g_id in group_predictions.keys():
         num_member = len(groups[g_id])
         film_rating = group_predictions[g_id]
@@ -128,9 +126,6 @@ def group_recommendation(user_predictions, groups, strategy, threshold, films, M
         if strategy == "average":
             sorted_film = list(film_rating.keys())
             sorted_rating = list(film_rating.values())
-            # if len(sorted_film) > 3:
-            #     g_recommendation[g_id] = sorted_film[:3]
-            # else:
             g_recommendation[g_id] = sorted_film
             g_rating[g_id] = sorted_rating
         elif strategy == "threshold":
