@@ -67,7 +67,8 @@ def ndcg_group(compressed_test_ratings_dict, groups,
                 true_r = [true_r[mid.index(i)] for i in mid if i in pred_mid]  # filter the true rating following by observe
             else:
                 pred_rating_filter = [group_pred_rating[group[0]][pred_mid.index(i)] for i in mid if i in pred_mid]
-            ndcg = _calculate_ndcg(np.array(true_r), np.array(pred_rating_filter))
-            nDCG.append(ndcg)
+            if len(true_r) > 3 and len(pred_rating_filter) > 3:
+                ndcg = _calculate_ndcg(np.array(true_r), np.array(pred_rating_filter))
+                nDCG.append(ndcg)
     mean_nDCG = sum(nDCG) / len(nDCG)
     return mean_nDCG
