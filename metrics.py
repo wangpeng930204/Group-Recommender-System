@@ -59,11 +59,12 @@ def ndcg_group(compressed_test_ratings_dict, groups,
         if true_ratings:
             for (film_id, str_rating) in true_ratings:
                 true_r.append(int(str_rating))
-                mid.append(film_id)
+                mid.append(film_id)   #observe: index of mid and corresponding true_r are the same
             group = [k for k, v in groups.items() if user_id in v]
             pred_mid = group_recommendation[group[0]]
             if (strategy == "threshold"):
                 pred_rating_filter = [group_pred_rating[user_id][pred_mid.index(i)] for i in mid if i in pred_mid]
+                true_r = [true_r[mid.index(i)] for i in mid if i in pred_mid]  # filter the true rating following by observe
             else:
                 pred_rating_filter = [group_pred_rating[group[0]][pred_mid.index(i)] for i in mid if i in pred_mid]
             ndcg = _calculate_ndcg(np.array(true_r), np.array(pred_rating_filter))
