@@ -122,7 +122,7 @@ def group_recommendation(group_predictions, member_predictions, groups, strategy
         # average by num of group members
         film_rating = {k: v / num_member for k, v in film_rating.items()}
         # sorted by rating
-        film_rating = dict(sorted(film_rating.items(), key=lambda item: item[1]))
+        film_rating = dict(sorted(film_rating.items(), key=lambda item: item[1], reverse=True))
         if strategy == "average":
             sorted_film = list(film_rating.keys())
             sorted_rating = list(film_rating.values())
@@ -149,6 +149,8 @@ def strategy_threshold(group_pre, group_member_pre, threshold):
         for film in film_rating.keys():
             if film_rating[film] >= threshold:
                 like.append(film)
+            else:
+                print(film_rating[film], u_id)
                 # group_like.update(film)
 
         members_like[u_id] = like
@@ -186,7 +188,7 @@ def frequency_strategy(user_predictions, groups, threshold):
                     loved_film_frequency[film] += 1
                 else:
                     loved_film_frequency[film] = 1
-        loved_film_frequency = dict(sorted(loved_film_frequency.items(), key=lambda item: item[1]))
+        loved_film_frequency = dict(sorted(loved_film_frequency.items(), key=lambda item: item[1], reverse=True))
         recommendation[g_id] = list(loved_film_frequency.keys())
         group_frequency[g_id] = list(loved_film_frequency.values())
         group_explanation[g_id] = user_explanation
