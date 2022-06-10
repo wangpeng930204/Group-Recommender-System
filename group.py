@@ -1,43 +1,41 @@
-# Todo find a way yo generate group for GRs
-import operator
-
 import numpy as np
 
 
-def generate_group(user_ids, group_scale=6, random=True):
+def generate_group(user_ids, group_size=6, random=True):
     groups = []
     if random:
-        groups = randomly_form_group(user_ids, group_scale)
-        # train_ratings_dict['group'] = groups
+        groups = randomly_form_group(user_ids, group_size)
+    else:
+        print("generate similar")
     return groups
 
 
 def randomly_form_group(user_ids, group_scale):
-    user_ids_ = list(user_ids).copy()
+    group_num = 0
+    user_ids = list(user_ids).copy()
     group_numbers = int(len(user_ids) / group_scale)
     groups = dict()
-    for gn in range(group_numbers):
+    for group_num in range(group_numbers):
         one_group = []
         for mn in range(group_scale):
-            index = np.random.randint(1, len(user_ids_))
-            one_group.append(user_ids_[index])
-            user_ids_.pop(index)
-        group_id = "g" + str(gn)
+            index = np.random.randint(1, len(user_ids))
+            one_group.append(user_ids[index])
+            user_ids.pop(index)
+        group_id = "g" + str(group_num)
         groups[group_id] = one_group
-    groups["g" + str(gn + 1)] = user_ids_
+    groups["g" + str(group_num + 1)] = user_ids
     return groups
 
 
 def aggregate_group_rating(films, user_predictions, groups, MUG, MUA, MUD):
     group_predictions, group_members_predictions = dict(), dict()
-    for key in groups.keys():
+    for gid in groups.keys():
         # count how many  members in this group rated this aspect
         count_actor, count_genre, count_director = dict(), dict(), dict()
         film_rating, actor_rating, genre_rating, director_rating, member_rating = dict(), dict(), dict(), dict(), dict()
-        for user in groups[key]:
-            member_rating[user] = user_predictions[user]
-            (fr, gr, ar, dr) = user_predictions[user]
-            # film_rating, count_film = sum_rating(film_rating, fr, count_film)
+        for uid in groups[gid]:
+            member_rating[uid] = user_predictions[uid]
+            (fr, gr, ar, dr) = user_predictions[uid]
             actor_rating, count_actor = sum_rating(actor_rating, ar, count_actor)
             genre_rating, count_genre = sum_rating(genre_rating, gr, count_genre)
             director_rating, count_director = sum_rating(director_rating, dr, count_director)
@@ -46,10 +44,48 @@ def aggregate_group_rating(films, user_predictions, groups, MUG, MUA, MUD):
         ave_genre_rating = average_all(genre_rating, count_genre)
         ave_director_rating = average_all(director_rating, count_director)
 
-        group_predictions[key] = group_film_strength(films, ave_genre_rating, ave_actor_rating,
+        group_predictions[gid] = group_film_strength(films, ave_genre_rating, ave_actor_rating,
                                                      ave_director_rating, MUG, MUA, MUD)
-        group_members_predictions[key] = member_rating
+        group_members_predictions[gid] = member_rating
     return group_predictions, group_members_predictions
+
+
+def least_Misery_aggregate(films, user_predictions, groups, MUG, MUA, MUD):
+    group_predictions, group_members_predictions, baseline_film = dict(), dict(), dict()
+    for gid in groups.keys():
+        baseline_film[gid] = dict()
+        least_actor_rating, least_genre_rating, least_director_rating, member_rating = dict(), dict(), dict(), dict()
+        for uid in groups[gid]:
+            member_rating[uid] = user_predictions[uid]
+            (fr, gr, ar, dr) = user_predictions[uid]
+            baseline_film[gid] = update_film_least_rating(baseline_film[gid], fr)
+            least_actor_rating = update_aspects_least_rating(least_actor_rating, ar)
+            least_genre_rating = update_aspects_least_rating(least_genre_rating, gr)
+            least_director_rating = update_aspects_least_rating(least_actor_rating, dr)
+
+        group_predictions[gid] = group_film_strength(films, least_genre_rating, least_actor_rating,
+                                                     least_director_rating, MUG, MUA, MUD)
+        group_members_predictions[gid] = member_rating
+    return group_predictions, group_members_predictions, baseline_film
+
+
+def update_aspects_least_rating(least_rating, to_update):
+    for film in to_update.keys():
+        for aspect in to_update[film].keys():
+            if aspect in least_rating.keys():
+                least_rating[aspect] = min(least_rating[aspect], to_update[film][aspect])
+            else:
+                least_rating[str(aspect)] = to_update[film][aspect]
+    return least_rating
+
+
+def update_film_least_rating(least_rating, to_update):
+    for film in to_update.keys():
+        if film in least_rating.keys():
+            least_rating[film] = min(least_rating[film], to_update[film])
+        else:
+            least_rating[str(film)] = to_update[film]
+    return least_rating
 
 
 def sum_rating(base, to_sum, count):
@@ -76,8 +112,6 @@ def group_film_strength(films, avgGenreRating, avgActorRating, avgDirectorRating
         sum_genre_rating, sum_director_rating, sum_actor_rating = 0, 0, 0
         count_genre, count_director, count_actor = 0, 0, 0
         average_genre_rating, average_actor_rating, average_director_rating = 0, 0, 0
-        # if type(films[film]['genre']) is str:
-        #     films[film]['genre'] = [films[film]['genre']]
         for genre in films[film]['genre']:
             if genre in avgGenreRating.keys():
                 sum_genre_rating += avgGenreRating[genre]
@@ -86,8 +120,6 @@ def group_film_strength(films, avgGenreRating, avgActorRating, avgDirectorRating
             average_genre_rating = sum_genre_rating / count_genre
         else:
             average_genre_rating = 0
-        # if type(films[film]['actors']) is str:
-        #     films[film]['actors'] = [films[film]['actors']]
         for actor in films[film]['actors']:
             if actor in avgActorRating.keys():
                 sum_actor_rating += avgActorRating[actor]
@@ -96,8 +128,6 @@ def group_film_strength(films, avgGenreRating, avgActorRating, avgDirectorRating
             average_actor_rating = sum_actor_rating / count_actor
         else:
             average_actor_rating = 0
-        # if type(films[film]['director']) is str:
-        #     films[film]['director'] = [films[film]['director']]
         for director in films[film]['director']:
             if director in avgDirectorRating.keys():
                 sum_director_rating += avgDirectorRating[director]
@@ -114,6 +144,7 @@ def group_film_strength(films, avgGenreRating, avgActorRating, avgDirectorRating
     return group_pre
 
 
+# old code
 def group_recommendation(group_predictions, member_predictions, groups, strategy, threshold, films, MUG, MUA, MUD):
     g_rating, g_recommendation, g_explanation = dict(), dict(), dict()
     for g_id in group_predictions.keys():
@@ -123,77 +154,26 @@ def group_recommendation(group_predictions, member_predictions, groups, strategy
         film_rating = {k: v / num_member for k, v in film_rating.items()}
         # sorted by rating
         film_rating = dict(sorted(film_rating.items(), key=lambda item: item[1], reverse=True))
-        if strategy == "average":
-            sorted_film = list(film_rating.keys())
-            sorted_rating = list(film_rating.values())
-            g_recommendation[g_id] = sorted_film
-            g_rating[g_id] = sorted_rating
-        elif strategy == "threshold":
-            member_rating_filter, recommendation, dislike = strategy_threshold(film_rating, member_predictions[g_id],
-                                                                               threshold)
-            g_recommendation[g_id] = recommendation
-            g_explanation[g_id] = dislike
-            g_rating.update(member_rating_filter)
+
+        sorted_film = list(film_rating.keys())
+        sorted_rating = list(film_rating.values())
+        g_recommendation[g_id] = sorted_film
+        g_rating[g_id] = sorted_rating
 
     return g_rating, g_recommendation, g_explanation
 
 
-def strategy_threshold(group_pre, group_member_pre, threshold):
-    recommendation = []
-    members_like = dict()
-    member_rating_filter = dict()
-    for u_id in group_member_pre.keys():
-        like = []
-        rating_filter_list = []
-        (film_rating, actor_rating, genre_rating, director_rating) = group_member_pre[u_id]
-        for film in film_rating.keys():
-            if film_rating[film] >= threshold:
-                like.append(film)
-            else:
-                print(film_rating[film], u_id)
-                # group_like.update(film)
-
-        members_like[u_id] = like
-    # for film in group_pre.keys():
-    #     if film in group_like:
-    #         recommendation.append(film)
-    for v in members_like.values():
-        recommendation.append(v)
-    recommendation_ = list(set.intersection(*[set(x) for x in recommendation]))
-    for u_id in group_member_pre.keys():
-        rating_filter_list = []
-        (film_rating, actor_rating, genre_rating, director_rating) = group_member_pre[u_id]
-        for film in recommendation_:
-            rating_filter_list.append(film_rating[film])
-        member_rating_filter[u_id] = rating_filter_list
-    return member_rating_filter, recommendation_, members_like
-
-
-def frequency_strategy(user_predictions, groups, threshold):
-    recommendation = dict()
-    group_explanation = dict()
-    group_frequency = dict()
-    for g_id in groups.keys():
-        loved_film_frequency = dict()
-        user_explanation = dict()
-        for u_id in groups[g_id]:
-            (fr, ar, gr, dr) = user_predictions[u_id]
-            dislike_film, like_film = rating_filter(fr, threshold)
-            dislike_actor, like_actor = rating_filter(ar, threshold)
-            dislike_genre, like_genre = rating_filter(gr, threshold)
-            dislike_director, like_director = rating_filter(dr, threshold)
-            user_explanation[u_id] = (dislike_film, like_film)
-            for film in like_film:
-                if film in loved_film_frequency.keys():
-                    loved_film_frequency[film] += 1
-                else:
-                    loved_film_frequency[film] = 1
-        loved_film_frequency = dict(sorted(loved_film_frequency.items(), key=lambda item: item[1], reverse=True))
-        recommendation[g_id] = list(loved_film_frequency.keys())
-        group_frequency[g_id] = list(loved_film_frequency.values())
-        group_explanation[g_id] = user_explanation
-
-    return group_frequency, recommendation, group_explanation
+def give_group_recommendation(group_predictions):
+    g_rating, g_recommendation = dict(), dict()
+    for g_id in group_predictions.keys():
+        film_rating = group_predictions[g_id]
+        # sorted by rating
+        film_rating = dict(sorted(film_rating.items(), key=lambda item: item[1], reverse=True))
+        sorted_film = list(film_rating.keys())
+        sorted_rating = list(film_rating.values())
+        g_recommendation[g_id] = sorted_film
+        g_rating[g_id] = sorted_rating
+    return g_rating, g_recommendation
 
 
 def rating_filter(ratings, threshold):

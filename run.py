@@ -1,7 +1,6 @@
 import pickle
-import time
 
-from group import generate_group, group_recommendation, aggregate_group_rating
+from group import generate_group, group_recommendation, aggregate_group_rating, least_Misery_aggregate
 from measures import predictions
 from metrics import ndcg_group
 from processing import remove_missing_film, get_user_rating_dicts, get_movies_aspect_matrix, \
@@ -35,17 +34,7 @@ if __name__ == "__main__":
                                    movies_all_actors_matrix, movielens_data)
     # generate group
     groups = generate_group(user_predictions.keys())
-    group_predictions, group_members_predictions = aggregate_group_rating(films, user_predictions, groups, MUG, MUA,
-                                                                          MUD)
-    g_rating_t, g_recommendation_t, g_explanation_t = group_recommendation(group_predictions, group_members_predictions,
-                                                                           groups, "threshold", 2.5,
-                                                                           films, MUG, MUA, MUD)
-
-    g_rating_a, g_recommendation_a, g_explanation_a = group_recommendation(group_predictions, group_members_predictions,
-                                                                           groups, "average",
-                                                                           2, films, MUG, MUA, MUD)
-    group_evaluation = ndcg_group(compressed_test_ratings_dict, groups, g_rating_t, g_recommendation_t, "threshold")
-    print(group_evaluation)
-
-    # 0.10146982971243731 group scale=3
-    # 0.013707188085947652 group scale=5
+    # Aggregate user graphical chassis into group graphical chassis and give group predictions
+    group_predictions, members_predictions, baseline_predictions = least_Misery_aggregate(films, user_predictions,
+                                                                                          groups, MUG, MUA,
+                                                                                          MUD)
