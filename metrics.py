@@ -54,6 +54,13 @@ def dcg(ratings, order):
 
 
 def ndcg_individual(compressed_test_ratings_dict, user_pred):
+    """ Calculate discounted cumulative gain for group.
+    Args:
+        compressed_test_ratings_dict (dictionary): the rating of the user on the test set.
+        user_pred (dictionary): rating prediction of user
+    Returns:
+        float: the mean discounted cumulative gain of the all users.
+    """
     nDCG = []
     for user_id, true_ratings in compressed_test_ratings_dict.items():
         true_r = []
@@ -72,7 +79,16 @@ def ndcg_individual(compressed_test_ratings_dict, user_pred):
 
 
 def ndcg_group(compressed_test_ratings_dict, groups,
-               group_pred_rating, group_recommendation, strategy):
+               group_pred_rating, group_recommendation):
+    """ Calculate discounted cumulative gain for group.
+    Args:
+        compressed_test_ratings_dict (dictionary): the rating of the user on the test set.
+        groups (dictionary): group id and its list of members
+        group_pred_rating (dictionary): rating prediction of group
+        group_recommendation (dictionary): movie id in top recommendation
+    Returns:
+        float: the mean discounted cumulative gain of all groups.
+    """
     nDCG = []
     for user_id, true_ratings in compressed_test_ratings_dict.items():
         true_r = []
@@ -84,12 +100,7 @@ def ndcg_group(compressed_test_ratings_dict, groups,
             group = [k for k, v in groups.items() if user_id in v]
             if len(group) > 0:
                 pred_mid = group_recommendation[group[0]]
-                if (strategy == "threshold"):
-                    pred_rating_filter = [group_pred_rating[user_id][pred_mid.index(i)] for i in mid if i in pred_mid]
-                    true_r = [true_r[mid.index(i)] for i in mid if
-                              i in pred_mid]  # filter the true rating following by observe
-                else:
-                    pred_rating_filter = [group_pred_rating[group[0]][pred_mid.index(i)] for i in mid if i in pred_mid]
+                pred_rating_filter = [group_pred_rating[group[0]][pred_mid.index(i)] for i in mid if i in pred_mid]
                 if len(true_r) > 2 and len(pred_rating_filter) > 2:
                     ndcg = top5_calculate_ndcg(np.array(true_r), np.array(pred_rating_filter))
                     nDCG.append(ndcg)
