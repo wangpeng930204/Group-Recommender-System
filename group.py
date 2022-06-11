@@ -75,6 +75,42 @@ def aggregate_group_rating(films, user_predictions, groups, MUG, MUA, MUD):
         group_members_predictions[gid] = member_rating
     return group_predictions, group_members_predictions
 
+def aggregate_average(films, user_predictions, groups, MUG, MUA, MUD, baseline="False"):
+    group_predictions, group_members_predictions = dict(), dict()
+    for key in groups.keys():
+        # count how many  members in this group rated this aspect
+        count_actor, count_genre, count_director, count_film = dict(), dict(), dict(), dict()
+        film_rating, actor_rating, genre_rating, director_rating, member_rating = dict(), dict(), dict(), dict(), dict()
+        if baseline:
+          for user in groups[key]:
+            member_rating[user] = user_predictions[user]
+            (fr, gr, ar, dr) = user_predictions[user]
+            # film_rating, count_film = sum_rating(film_rating, fr, count_film)
+            for film in fr.keys():
+                if film in film_rating.keys():
+                    count_film[film] += 1
+                    film_rating[film] = fr[film] + film_rating[film]
+                else:
+                    count_film[film] = 1
+                    film_rating[str(film)] = fr[film]          
+          group_predictions[key] = average_all(film_rating, count_film)             
+        else:
+          for user in groups[key]:
+              member_rating[user] = user_predictions[user]
+              (fr, gr, ar, dr) = user_predictions[user]
+              # film_rating, count_film = sum_rating(film_rating, fr, count_film)
+              actor_rating, count_actor = sum_rating(actor_rating, ar, count_actor)
+              genre_rating, count_genre = sum_rating(genre_rating, gr, count_genre)
+              director_rating, count_director = sum_rating(director_rating, dr, count_director)
+
+          ave_actor_rating = average_all(actor_rating, count_actor)
+          ave_genre_rating = average_all(genre_rating, count_genre)
+          ave_director_rating = average_all(director_rating, count_director)
+
+          group_predictions[key] = group_film_strength(films, ave_genre_rating, ave_actor_rating,
+                                                      ave_director_rating, MUG, MUA, MUD)
+        # group_members_predictions[key] = member_rating
+    return group_predictions
 
 def least_Misery_aggregate(films, user_predictions, groups, MUG, MUA, MUD):
     group_predictions, group_members_predictions, baseline_film = dict(), dict(), dict()
