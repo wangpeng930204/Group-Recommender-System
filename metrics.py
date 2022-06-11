@@ -82,16 +82,17 @@ def ndcg_group(compressed_test_ratings_dict, groups,
                 true_r.append(int(str_rating))
                 mid.append(film_id)  # observe: index of mid and corresponding true_r are the same
             group = [k for k, v in groups.items() if user_id in v]
-            pred_mid = group_recommendation[group[0]]
-            if (strategy == "threshold"):
-                pred_rating_filter = [group_pred_rating[user_id][pred_mid.index(i)] for i in mid if i in pred_mid]
-                true_r = [true_r[mid.index(i)] for i in mid if
-                          i in pred_mid]  # filter the true rating following by observe
-            else:
-                pred_rating_filter = [group_pred_rating[group[0]][pred_mid.index(i)] for i in mid if i in pred_mid]
-            if len(true_r) > 2 and len(pred_rating_filter) > 2:
-                ndcg = top5_calculate_ndcg(np.array(true_r), np.array(pred_rating_filter))
-                nDCG.append(ndcg)
+            if len(group) > 0:
+                pred_mid = group_recommendation[group[0]]
+                if (strategy == "threshold"):
+                    pred_rating_filter = [group_pred_rating[user_id][pred_mid.index(i)] for i in mid if i in pred_mid]
+                    true_r = [true_r[mid.index(i)] for i in mid if
+                              i in pred_mid]  # filter the true rating following by observe
+                else:
+                    pred_rating_filter = [group_pred_rating[group[0]][pred_mid.index(i)] for i in mid if i in pred_mid]
+                if len(true_r) > 2 and len(pred_rating_filter) > 2:
+                    ndcg = top5_calculate_ndcg(np.array(true_r), np.array(pred_rating_filter))
+                    nDCG.append(ndcg)
     if len(nDCG) == 0:
         mean_nDCG = 0
     else:

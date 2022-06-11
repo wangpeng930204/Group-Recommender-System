@@ -1,23 +1,49 @@
 import numpy as np
 
 
-def generate_group(user_ids, group_size=6, random=True):
-    groups = []
+def generate_group(user_ids, sim_users=None, group_size=6, random=True):
     if random:
         groups = randomly_form_group(user_ids, group_size)
     else:
-        print("generate similar")
+        groups = form_group_similarly(sim_users, group_size)
     return groups
 
 
-def randomly_form_group(user_ids, group_scale):
+def form_group_similarly(sim_users, group_size):
+    groups = dict()
+    sim_users = sim_users.copy()
+    group_numbers = int(len(sim_users.keys()) / group_size)
+    id = 0
+    used_user_count = set()
+    for uid in sim_users.keys():
+        gid = "g" + str(id)
+        one_group = []
+        count = 0
+        full_size = False
+        for i in range(len(sim_users[uid])):
+            sim_uid, _ = sim_users[uid][i]  # start from the second similar user
+            if sim_uid not in used_user_count:
+                if count < group_size:
+                    one_group.append(sim_uid)
+                    used_user_count.add(sim_uid)
+                else:
+                    full_size = True
+                count += 1
+        if full_size:
+            groups[gid] = one_group
+            id += 1
+
+    return groups
+
+
+def randomly_form_group(user_ids, group_size):
     group_num = 0
     user_ids = list(user_ids).copy()
-    group_numbers = int(len(user_ids) / group_scale)
+    group_numbers = int(len(user_ids) / group_size)
     groups = dict()
     for group_num in range(group_numbers):
         one_group = []
-        for mn in range(group_scale):
+        for mn in range(group_size):
             index = np.random.randint(1, len(user_ids))
             one_group.append(user_ids[index])
             user_ids.pop(index)

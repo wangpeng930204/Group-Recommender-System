@@ -15,8 +15,8 @@ MUA = 0.1
 MUD = 0.1
 
 
-def ndcg_experiments(sorted_test, userPredictions, films, group_size):
-    groups = generate_group(userPredictions.keys(), group_size=group_size)
+def ndcg_experiments(sorted_test, userPredictions, sim_users, films, group_size, random_group=False):
+    groups = generate_group(userPredictions.keys(), sim_users, group_size=group_size, random=random_group)
     least_predictions, least_members_predictions, baseline = least_Misery_aggregate(films, userPredictions, groups, MUG,
                                                                                     MUA, MUD)
     g_rating_a, g_recommendation_a = give_group_recommendation(least_predictions)
@@ -47,8 +47,10 @@ if __name__ == "__main__":
                                    sims, movies_all_genres_matrix,
                                    movies_all_directors_matrix,
                                    movies_all_actors_matrix, movielens_data)
-    evaluations_least_misery = []
-    evaluations_baseline = []
+    sim_lm = []
+    sim_bl = []
+    random_lm = []
+    random_bl = []
     ax_value = []
     user_evaluation = ndcg_individual(compressed_test_ratings_dict, user_predictions)  # give individual ndcg here
     user_evaluations = []
@@ -56,21 +58,31 @@ if __name__ == "__main__":
     for group_scale in range(2, 10):
         user_evaluations.append(user_evaluation)
         ax_value.append(group_scale)
-        lm_ndcg, baseline_ndcg = ndcg_experiments(compressed_test_ratings_dict, user_predictions, films, group_scale)
-        evaluations_least_misery.append(lm_ndcg)
-        evaluations_baseline.append(baseline_ndcg)
+        print(group_scale)
+        sim_lm_ndcg, sim_baseline_ndcg = ndcg_experiments(compressed_test_ratings_dict, user_predictions, sims, films,
+                                                          group_scale)
+        random_lm_ndcg, random_baseline_ndcg = ndcg_experiments(compressed_test_ratings_dict, user_predictions, sims,
+                                                                films,
+                                                                group_scale, random_group=True)
+        sim_lm.append(sim_lm_ndcg)
+        sim_bl.append(sim_baseline_ndcg)
+        random_bl.append(random_baseline_ndcg)
+        random_lm.append(random_lm_ndcg)
 
-    barWidth = 0.25
+    barWidth = 0.2
     br1 = np.arange(len(user_evaluations))
     br2 = [x + barWidth for x in br1]
     br3 = [x + barWidth for x in br2]
+    br4 = [x + barWidth for x in br3]
     # Make the plot
-    plt.bar(br1, user_evaluations, color='r', width=barWidth,
-            edgecolor='grey', label='Individual')
-    plt.bar(br2, evaluations_least_misery, color='y', width=barWidth,
-            edgecolor='grey', label='Least Misery')
-    plt.bar(br3, evaluations_baseline, color='b', width=barWidth,
-            edgecolor='grey', label='Baseline')
+    plt.bar(br1, random_bl, color='r', width=barWidth,
+            edgecolor='grey', label='random baseline')
+    plt.bar(br2, random_lm, color='r', width=barWidth,
+            edgecolor='grey', label='random least misery')
+    plt.bar(br3, sim_lm, color='y', width=barWidth,
+            edgecolor='grey', label='similar least misery')
+    plt.bar(br4, sim_bl, color='b', width=barWidth,
+            edgecolor='grey', label='similar baseline')
 
     plt.title("The NDCG of Top 3 predicted film")
     plt.xlabel('Group Size', fontweight='bold', fontsize=15)
