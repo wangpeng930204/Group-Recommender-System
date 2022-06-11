@@ -21,8 +21,8 @@ def ndcg_experiments(sorted_test, userPredictions, sim_users, films, group_size,
                                                                                     MUA, MUD)
     g_rating_a, g_recommendation_a = give_group_recommendation(least_predictions)
     baseline_rating, baseline_ranking = give_group_recommendation(baseline)
-    group_evaluation = ndcg_group(sorted_test, groups, g_rating_a, g_recommendation_a, "average")
-    baseline_evaluation = ndcg_group(sorted_test, groups, baseline_rating, baseline_ranking, "average")
+    group_evaluation = ndcg_group(sorted_test, groups, g_rating_a, g_recommendation_a)
+    baseline_evaluation = ndcg_group(sorted_test, groups, baseline_rating, baseline_ranking)
     return group_evaluation, baseline_evaluation
 
 
